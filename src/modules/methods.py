@@ -1,15 +1,16 @@
 import numpy as np
-import cmath
+from ambiance import Atmosphere
 import matplotlib.pyplot as plt
 from modules.utils import *
 
-def pkmethod(sigma:float,   V_vec:float,    mu:float,
-             a:float,       xTheta:float,   rs:float,
-             initK:float,    tol:float=0.001):
+def pkmethod(rs:float,          sigma:float,    mu:float,   V_vec:float,
+             a:float,           xTheta:float,   initK:float,       
+             printAlt,          tol:float=0.001):
     """
      This function holds the main logic for the pk method.   
     """
     print("STARTING PK METHOD")
+    print(f"Conditions\t Altitude: {printAlt:.1f},\trs: {rs:.4f},\tsigma: {sigma:.4f},\tmu: {mu:.4f}")
     print("-"*65)
 
     results = []
@@ -52,21 +53,36 @@ def pkmethod(sigma:float,   V_vec:float,    mu:float,
 
     return results, roots
 
-def computeDimensionlessParameters(U, m, rho_inf, EI, GJ, I_P, b):
-    l = 5
-    omega_h     = (1.8751**2) * np.sqrt(EI / (m * l**3))
-    omega_theta = (np.pi / 2) * np.sqrt(GJ / I_P * l)
-
-    sigma = omega_h / omega_theta
+def computeDimensionlessParameters(U_vec, m, altitude, EI, GJ, I_P, b, l, velocityRange:str="Default") -> tuple:
     
+    # -------- SIGMA -------- #
+    omega_h     = (1.8751**2) * np.sqrt(EI / (m * l**3))
+    omega_theta = (np.pi / 2) * np.sqrt(GJ / (I_P * l))
+    sigma = omega_h / omega_theta
+
+    # -------- RS -------- #
     rs = I_P / (m * b**2)
 
+    # -------- MU -------- #
+    flightlevel = Atmosphere(altitude)
+    rho_inf = flightlevel.density[0]
     mu = m / (rho_inf * np.pi * b**2)
 
-    V = U / (b * omega_theta)
-    print(rs, sigma, mu, V)
+    # -------- V -------- #
+    if velocityRange == "Default":
+        V_vec = np.arange(0, 4 + 0.05, 0.005)
+        V_vec = V_vec[1:]
+    elif velocityRange == "FlightEnvelope":
+        U_max = np.max(U_vec)
+        U_min = np.min(U_vec)
+        U_Vec = np.arange(U_min, U_max + 0.05, 0.05)
+        V_vec = U_Vec / (b * omega_theta)
+        V_vec = V_vec[1:]
+    else:
+        raise ValueError("Invalid option for velocity range. Please choose from Default or FlightEnvelope.")
 
-    return rs, sigma, mu, V
+    #print(f"ALTITUDE: {altitude}, RS: {rs}, SIGMA: {sigma}, MU: {mu}, V: {np.max(V_vec)}")
+    return rs, sigma, mu, V_vec
 
 
 

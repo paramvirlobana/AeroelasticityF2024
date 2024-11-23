@@ -6,6 +6,7 @@
 #===========================================================
 
 import numpy as np
+import time
 import pandas as pd
 import argparse
 import matplotlib.pyplot as plt
@@ -30,7 +31,7 @@ UMAXSC  =     83.8889           #   [m/s]   Maximum Speed at Service Ceiling (SC
 AR      =     1.17              #   [NA]    Wing Aspect Ratio
 S       =     15.0              #   [m^2]   Wing Area
 WFUEL   =     80                #   [kg]    Weight of Fuel in Each Wing
-MMIF=     7                 #   [kg.m^2]Mass Moment of Inertia (MMI) at MTOW
+MMIF    =     7                 #   [kg.m^2]Mass Moment of Inertia (MMI) at MTOW
 MMIE    =     4                 #   [kg.m^2]Mass Moment of Inertia (MMI) No Fuel
 EI      =     2e5               #   [N.m^2] Bending Rigidity
 GJ      =     1e5               #   [N.m^2] Torsional Rigidity
@@ -49,15 +50,18 @@ TODO:
 """
 
 def main():
-    
+    startTime = time.time()
+
     # SET THE ENVIRONMENT FOR ANALYSIS
     parser = argparse.ArgumentParser(description="Flutter Analysis tool | P-K METHOD | P METHOD")
     parser.add_argument('-v', '--validation', action='store_true', help="If passed, the validation logic is called along with part 1.")
     parser.add_argument('-z', '--validationo', action='store_true', help="If passed, the validation standalone is called")
+    parser.add_argument('-p', '--plot', action='store_true', help="Shows plot for the validation case.")
     arguments = parser.parse_args()
 
     v = arguments.validation
     z = arguments.validationo
+    p = arguments.plot
 
     """
     -- CALL THE REQUESTED METHOD.
@@ -65,13 +69,18 @@ def main():
     -- PK method is ALWAYS called since it is quite reliable.
     """
     if z == False:
-        case.part1()
+        case.FLUTTER()
 
     if v == True:
-        case.validation()
+        case.validation(p)
 
     if z == True:
-        case.validation()
+        case.validation(p)
+
+    endTime = time.time()
+    print("STATS:")
+    print("-"*6)
+    print(f"Program took {(endTime - startTime) *10**3:10.03f}ms to execute.")
 
 
 if __name__ == "__main__":

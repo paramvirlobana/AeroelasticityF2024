@@ -10,7 +10,7 @@ import platform
 import csv
 import matplotlib.pyplot as plt
 
-def writeResults(input_vars, flutter_points, filename="validation.csv"):
+def writeResults(input_vars, flutter_points, filename="results/validation.csv"):
     """
     Writes the flutter analysis results and input variables to a CSV file.
     """
