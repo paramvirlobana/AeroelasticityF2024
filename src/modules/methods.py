@@ -53,7 +53,14 @@ def pkmethod(rs:float,          sigma:float,    mu:float,   V_vec:float,
 
     return results, roots
 
-def computeDimensionlessParameters(U_vec, m, altitude, EI, GJ, I_P, b, l, velocityRange:str="Default") -> tuple:
+
+def computeSectionModel(chordCoeffCOM, chordCoeffEA) -> tuple:
+    e = 2 * chordCoeffCOM - 1
+    a = 2 * chordCoeffEA - 1
+    xTheta = e - a
+    return a, xTheta
+
+def computeDimensionlessParameters(U_vec, m, altitude, EI, GJ, I_P, b, l, dv, velocityRange:str) -> tuple:
     
     # -------- SIGMA -------- #
     omega_h     = (1.8751**2) * np.sqrt(EI / (m * l**3))
@@ -70,12 +77,12 @@ def computeDimensionlessParameters(U_vec, m, altitude, EI, GJ, I_P, b, l, veloci
 
     # -------- V -------- #
     if velocityRange == "Default":
-        V_vec = np.arange(0, 4 + 0.05, 0.005)
+        V_vec = np.arange(0, 4 + dv, dv)
         V_vec = V_vec[1:]
     elif velocityRange == "FlightEnvelope":
         U_max = np.max(U_vec)
         U_min = np.min(U_vec)
-        U_Vec = np.arange(U_min, U_max + 0.05, 0.05)
+        U_Vec = np.arange(U_min, U_max + dv, dv)
         V_vec = U_Vec / (b * omega_theta)
         V_vec = V_vec[1:]
     else:

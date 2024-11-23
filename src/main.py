@@ -5,49 +5,12 @@
 #   -- Paramvir Lobana -- Jeremy Burg -- Charles Gauthier --
 #===========================================================
 
-import numpy as np
 import time
-import pandas as pd
 import argparse
-import matplotlib.pyplot as plt
 import modules.cases as case
 from modules.utils import *
 
 __version__ = 1.0
-"""
- Define all static variables:
- PROGRAM      VALUE                UNITS   DESCRIPTION
- VARIABLE
- -----------------------------------------------------------------
-                           AIRCRAFT
-MTOW    =     997.9032          #   [kg]    Maximum Take-off Weight
-SHP     =     145               #   [hp]    Horsepower
-ENDR    =     4*60*60           #   [ s]    Aircraft Endurance
-ALTMAX  =     3000              #   [ m]    Service Ceiling
-UMAXSL  =     70                #   [m/s]   Maximum Speed at Sea Level (SL)
-UMAXSC  =     83.8889           #   [m/s]   Maximum Speed at Service Ceiling (SC)
-   
-                             WING
-AR      =     1.17              #   [NA]    Wing Aspect Ratio
-S       =     15.0              #   [m^2]   Wing Area
-WFUEL   =     80                #   [kg]    Weight of Fuel in Each Wing
-MMIF    =     7                 #   [kg.m^2]Mass Moment of Inertia (MMI) at MTOW
-MMIE    =     4                 #   [kg.m^2]Mass Moment of Inertia (MMI) No Fuel
-EI      =     2e5               #   [N.m^2] Bending Rigidity
-GJ      =     1e5               #   [N.m^2] Torsional Rigidity
-
- CALCULATED VALUES
-MWING   =     26.91*S           #   [kg]    Wing Mass
-C       =     np.sqrt(S*AR)/2   #   [ m]    Wing chord length
-CMF     =     0.35 * C
-CME     =     0.45 * C
-"""
-"""
-TODO:
-    -- 
-    --
-    --
-"""
 
 def main():
     startTime = time.time()
@@ -69,7 +32,7 @@ def main():
     -- PK method is ALWAYS called since it is quite reliable.
     """
     if z == False:
-        case.FLUTTER()
+        case.part1(velocityRange='FlightEnvelope')
 
     if v == True:
         case.validation(p)
@@ -84,5 +47,6 @@ def main():
 
 
 if __name__ == "__main__":
+    
     printHead()
     main()

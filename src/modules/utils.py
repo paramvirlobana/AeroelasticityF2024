@@ -5,12 +5,41 @@
 # Author:
 #   -- Paramvir Lobana --
 #===========================================================
-
+import os
 import platform
 import csv
 import matplotlib.pyplot as plt
 
-def writeResults(input_vars, flutter_points, filename="results/validation.csv"):
+def writeResults(input_vars, flutter_points, filename="results/flutterAnalysis.csv"):
+    """
+    Writes the flutter analysis results and input variables to a CSV file.
+    """
+    fieldnames = ['time[s]', 'a', 'e', 'mu', 'rs', 'sigma', 'xTheta', 'MMI', 'MWING', 'chordCoeffCOM', 'h']
+    modes = ['R1', 'R2', 'R3', 'R4']
+    for mode in modes:
+        fieldnames.extend([f'{mode}_V_flutter', f'{mode}_freq_flutter'])
+
+    data = input_vars.copy()
+    for mode in modes:
+        flutter_info = flutter_points.get(mode)
+        if flutter_info is not None:
+            V_flutter = flutter_info['V_flutter']
+            freq_flutter = flutter_info['freq_flutter']
+        else:
+            V_flutter = 99999
+            freq_flutter = 99999
+        data[f'{mode}_V_flutter'] = V_flutter
+        data[f'{mode}_freq_flutter'] = freq_flutter
+
+    # Write to CSV
+    file_exists = os.path.isfile(filename)
+    with open(filename, mode='a', newline='') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        if not file_exists or os.path.getsize(filename) == 0:
+            writer.writeheader()
+        writer.writerow(data)
+
+def writeResultsValidation(input_vars, flutter_points, filename="results/validation.csv"):
     """
     Writes the flutter analysis results and input variables to a CSV file.
     """

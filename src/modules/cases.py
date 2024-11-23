@@ -1,6 +1,9 @@
+import os
 import numpy as np
+from datetime import datetime
 from modules.methods import *
 import modules.flightEnvelope as flEnv
+from modules.utils import *
 
 # Define all static variables:
 # PROGRAM      VALUE                UNITS   DESCRIPTION
@@ -24,13 +27,12 @@ EI      =     2e5               #   [N.m^2] Bending Rigidity
 GJ      =     1e5               #   [N.m^2] Torsional Rigidity
 
 # CALCULATED VALUES
-MWING   =     26.91*S           #   [kg]    Wing Mass
+MWINGE  =     (26.91*S)/2       #   [kg]    Wing Mass
+MWINGF  =     MWINGE + 80       #   [kg]    Wing Mass
 B       =     np.sqrt(S*AR)     #   [ m]    Wing span total length
 C       =     S / B             #   [ m]    Wing chord
-CMF     =     0.35 * C
-CME     =     0.45 * C
-
-
+CMF     =     0.35
+CME     =     0.45
 
 
 """
@@ -46,62 +48,83 @@ TODO:
 """
 
 
-def FLUTTER(case:str='part1Flutter'):
+def part1(dv:float=0.05, dt:int = 100, velocityRange:str='FlightEnvelope',case:str='part1Flutter',
+          showPlots:bool=False):
 
     # Step 1: get velocity and altitude conditions:
     #   -- for each height, get a velocity vector.
     #   -- this velocity vector become the input.
     # will debug the problem initially assuming that the aircraft is full.
 
+    # Conditions returned from the flight envelope for altitude and velocity.
     conditions = flEnv.conditions()
     arrALT =  np.unique(conditions[:,1])
 
+    # Return flight conditions for the aircraft mission.
+    IP_sweep = np.linspace(MMIE, MMIF, dt)
+    chordCoeffCOM_sweep = np.linspace(CME, CMF, dt)
+    mass_sweep = np.linspace(MWINGE, MWINGF, dt)
+    time_sweep = np.linspace(0, ENDR, dt)
+    
+    current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+    outfilename = f"results/{case}_{current_time}.csv"
     velocity_dict = {}
-    for h in arrALT:
-        U_vec = conditions[conditions[:,1] == h][:,0]
-        velocity_dict[h] = U_vec
 
-        # Create tuples for the aircraft parameters
-        amb         = (U_vec, MWING, h)
-        structural  = (EI, GJ, MMIF)
-        geometric   = (C/2, B/2)
-        parameters = computeDimensionlessParameters(*amb, *structural, *geometric, velocityRange="FlightEnvelope")
-        sectionModel = computeSectionModel(0.35, 0.45)
-        flutter_results, roots = pkmethod(*parameters, *sectionModel, initK=1.0, printAlt=h)
-        flutter_points = findFlutter(parameters[3], roots)
-        # Print flutter results
-        print("-"*65)
-        for mode_key, flutter_info in flutter_points.items():
-            if flutter_info is not None:
-                V_flutter = flutter_info['V_flutter']
-                freq_flutter = flutter_info['freq_flutter']
-                print(f"\nMode {mode_key}:")
-                print(f"  Flutter Velocity (V_flutter): {V_flutter}")
-                print(f"  Flutter Frequency (freq_flutter): {freq_flutter}")
-                plotDimensionlessFrequency(parameters[3], roots["R1"], roots["R2"], roots["R3"], roots["R4"], case)
-                plotDimensionlessDamping(parameters[3], roots["R1"], roots["R2"], roots["R3"], roots["R4"], case)
-            else:
-                print(f"\nMode {mode_key}: No flutter detected in the given velocity range.")
-        print("-"*65)
+    for i in range(dt):
+        MMI = IP_sweep[i]
+        MWING = mass_sweep[i]
+        chordCoeffCOM = chordCoeffCOM_sweep[i]
+        time = time_sweep[i]
 
-        input_vars = {
-        'a': parameters[0],
-        'e': 0.45,
-        'mu': parameters[2],
-        'rs': parameters[0],
-        'sigma': parameters[1],
-        'xTheta': parameters[1]
-        }
-        
+        for h in arrALT:
+            U_vec = conditions[conditions[:,1] == h][:,0]
+            velocity_dict[h] = U_vec
 
-        writeResults(input_vars, flutter_points, filename="results/" + case + ".csv")
+            # Create tuples for the aircraft parameters
+            amb         = (U_vec, MWING, h)
+            structural  = (EI, GJ, MMI)
+            geometric   = (C/2, B/2)
 
+            parameters = computeDimensionlessParameters(*amb, *structural, *geometric, dv=dv, velocityRange=velocityRange)
+            sectionModel = computeSectionModel(chordCoeffCOM, 0.4)
 
-def computeSectionModel(chordCoeffCOM, chordCoeffEA) -> tuple:
-    e = 2 * chordCoeffCOM - 1
-    a = 2 * chordCoeffEA - 1
-    xTheta = e - a
-    return a, xTheta
+            flutter_results, roots = pkmethod(*parameters, *sectionModel, initK=1.0, printAlt=h)
+            flutter_points = findFlutter(parameters[3], roots)
+
+            # Print flutter results
+            print("-"*65)
+            for mode_key, flutter_info in flutter_points.items():
+                if flutter_info is not None:
+                    V_flutter = flutter_info['V_flutter']
+                    freq_flutter = flutter_info['freq_flutter']
+                    print(f"\nMode {mode_key}:")
+                    print(f"  Flutter Velocity (V_flutter): {V_flutter}")
+                    print(f"  Flutter Frequency (freq_flutter): {freq_flutter}")
+                    if showPlots:
+                        plotDimensionlessFrequency(parameters[3], roots["R1"], roots["R2"], roots["R3"], roots["R4"], case)
+                        plotDimensionlessDamping(parameters[3], roots["R1"], roots["R2"], roots["R3"], roots["R4"], case)
+                else:
+                    print(f"\nMode {mode_key}: No flutter detected in the given velocity range.")
+            print("-"*65)
+
+            input_vars_flutter = {
+                'time[s]': time,
+                'a': parameters[0],
+                'e': 0.45,
+                'mu': parameters[2],
+                'rs': parameters[0],
+                'sigma': parameters[1],
+                'xTheta': parameters[1],
+                'MMI': MMI,
+                'MWING': MWING,
+                'chordCoeffCOM': chordCoeffCOM,
+                'h': h
+            }
+            
+            writeResults(input_vars_flutter, flutter_points, filename=outfilename)
+    print("")
+    print_green(f"Results written to {outfilename}")
+    print("")
 
 def validation(showPlot:bool):
     """
@@ -151,7 +174,7 @@ def validation(showPlot:bool):
             print(f"\nMode {mode_key}: No flutter detected in the given velocity range.")
     print("-"*65)
 
-    writeResults(input_vars, flutter_points)
+    writeResultsValidation(input_vars, flutter_points)
     
     if showPlot:
         plotDimensionlessFrequency(V_vec, roots["R1"], roots["R2"], roots["R3"], roots["R4"], case)
