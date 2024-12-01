@@ -10,7 +10,7 @@ The main entry point of the program is the ```main.py``` file. This file contain
 
 The ```case.py``` file contains the cases that a user can define and run to solve for a given flutter problem. The cases are defined within functions and then invoked from the ```main.py``` file. In the program, there are 3 predefined cases:
 1. Validation case
-2. Part 1 - Genereic Aircraft
+2. Part 1 - Generic Aircraft
 3. Part 2 - All Electric Aircraft - TO BE COMPLETED
 
 ### Example Usage
