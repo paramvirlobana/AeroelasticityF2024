@@ -2,14 +2,14 @@ import numpy as np
 import matplotlib.pyplot as plt
 from scipy.interpolate import interp1d
 
-def conditions(showPlot:bool=False, saveResults:bool=False):
+def conditions(showPlot:bool=False, saveResults:bool=False, showConditions:bool=False):
 
     x_points = [0, 252/3.6, 302/3.6, 302/3.6, 112.5/3.6, 0, 0]
     y_points = [0, 0, 800, 3000, 3000, 1200, 0]
     xy = (x_points, y_points)
     points, mask = flightEnvelopePoints(*xy)
     if showPlot:
-        plotEnvelope(points, *xy)
+        plotEnvelope(points, *xy, showConditions)
     if saveResults:
         np.savetxt('results/flight_envelope_points.csv', points, delimiter=',', header='velocity,altitude', comments='')
 
@@ -61,24 +61,49 @@ def flightEnvelopePoints(x_points, y_points, v_resolution=2, h_resolution=500):
     return valid_points, mask
 
 
-def plotEnvelope(points, x_points, y_points):
-    plt.figure(figsize=(8, 5))
+def plotEnvelope(points, x_points, y_points, showConditions:bool=False):
+    fig, ax = plt.subplots(figsize=(8, 5))
     
     # Plot the boundary lines first
-    plt.plot(x_points, y_points, 'r-', linewidth=2, alpha=0.7, label='Flight Envelope')
-    plt.scatter(points[:,0], points[:,1], s=2, alpha=0.5, label='Analysis Conditions')
+    ax.plot(x_points, y_points, color='black', linewidth=2, alpha=0.7, label='Flight Envelope')
+
+    if showConditions:
+        ax.scatter(points[:,0], points[:,1], s=2, alpha=0.5, label='Analysis Conditions')
     
-    plt.xlabel('Velocity (m/s)')
-    plt.ylabel('Altitude (m)')
-    plt.title('Flight Envelope Points')
-    plt.grid(True)
-    plt.legend()
-    
-    plt.xlim(-10/3.6, 320/3.6)
-    plt.ylim(-100, 3200)
-    
+    ax.set_xlabel('True speed (m/s)')
+    ax.set_ylabel('Altitude (m)')
+    # ax.set_title('Flight ')
+    ax.fill(x_points, y_points, color='lightgray', alpha=0.5)
+
+    # ax.grid(True)
+    ax.set_xlim(-5, max(x_points)*1.15)
+    ax.set_ylim(-100, max(y_points)*1.15)
+    ax.spines['top'].set_visible(False)
+    ax.spines['right'].set_visible(False)
+
+
+    ax.text(87, 30, "252 km/h", ha='right')
+    ax.text(85, 800, "302 km/h", ha='left')
+    ax.text(82, 800, "800 m", ha='right')
+    ax.text(14, 1200, "1200 m", ha='right')
+    ax.text(85, 3000, "3000 m", ha='left')
+
+
+    plt.savefig("figs/FlightEnvelope.eps", format="eps")
     plt.show()
 
+def plotSettings():
+    plt.rcParams.update({
+    'font.family': 'serif', 
+    'font.serif': ['Times New Roman'],  
+    'font.size':       16,  
+    'axes.titlesize':  16,  
+    'axes.labelsize':  16,  
+    'legend.fontsize': 16, 
+    'xtick.labelsize': 16, 
+    'ytick.labelsize': 16  
+    })
 
 if __name__ == "__main__":
-    conditions()
+    plotSettings()
+    conditions(showPlot=True)

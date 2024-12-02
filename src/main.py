@@ -27,12 +27,11 @@ def main():
     p = arguments.plot
 
     """
-    -- CALL THE REQUESTED METHOD.
-    -- NOTE: MULTIPLE METHODS CAN BE CALLED AT THE SAME TIME.
+    -- CALL THE CASES FROM THE 'CASES.PY' FILES.
     -- PK method is ALWAYS called since it is quite reliable.
     """
     if z == False:
-        case.part1(velocityRange='FlightEnvelope')
+        case.part1(velocityRange='FlightEnvelope', showPlots=p)
 
     if v == True:
         case.validation(p)
@@ -43,7 +42,7 @@ def main():
     endTime = time.time()
     print("STATS:")
     print("-"*6)
-    print(f"Program took {(endTime - startTime) *10**3:10.03f}ms to execute.")
+    print(f"Program took {(endTime - startTime):10.03f}s to execute.")
 
 
 if __name__ == "__main__":

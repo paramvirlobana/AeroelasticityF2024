@@ -61,6 +61,7 @@ def computeSectionModel(chordCoeffCOM, chordCoeffEA) -> tuple:
     return a, xTheta
 
 def computeDimensionlessParameters(U_vec, m, altitude, EI, GJ, I_P, b, l, dv, velocityRange:str) -> tuple:
+    #m = m/9.81
     
     # -------- SIGMA -------- #
     omega_h     = (1.8751**2) * np.sqrt(EI / (m * l**3))
@@ -73,22 +74,22 @@ def computeDimensionlessParameters(U_vec, m, altitude, EI, GJ, I_P, b, l, dv, ve
     # -------- MU -------- #
     flightlevel = Atmosphere(altitude)
     rho_inf = flightlevel.density[0]
-    mu = m / (rho_inf * np.pi * b**2)
+    mu = m / (rho_inf * np.pi * b**2 * l)
 
     # -------- V -------- #
     if velocityRange == "Default":
-        V_vec = np.arange(0, 4 + dv, dv)
+        V_vec = np.arange(0, 5 + dv, dv)
         V_vec = V_vec[1:]
     elif velocityRange == "FlightEnvelope":
         U_max = np.max(U_vec)
         U_min = np.min(U_vec)
-        U_Vec = np.arange(U_min, U_max + dv, dv)
-        V_vec = U_Vec / (b * omega_theta)
+        V_max = U_max / (b * omega_theta)
+        V_vec = np.arange(0, V_max*1.20 + dv, dv)
         V_vec = V_vec[1:]
     else:
         raise ValueError("Invalid option for velocity range. Please choose from Default or FlightEnvelope.")
 
-    #print(f"ALTITUDE: {altitude}, RS: {rs}, SIGMA: {sigma}, MU: {mu}, V: {np.max(V_vec)}")
+    #print(f"ALTITUDE: {altitude}, RS: {rs}, SIGMA: {sigma}, MU: {mu}, rho_inf:{rho_inf}, V: {np.max(V_vec)}")
     return rs, sigma, mu, V_vec
 
 
@@ -157,14 +158,14 @@ def findFlutter(V_vec, roots):
                 -- If yes, the mode is ignored.
             """
             if freq_flutter < 0:
-                print_red(f"Negative frequency at flutter point for {mode_key}, ignoring.")
+                print(f"Negative frequency at flutter point for {mode_key}, ignoring.")
                 flutter_results[mode_key] = None        # Set mode key to NONE.
             else:
                 flutter_results[mode_key] = {
                     'V_flutter': V_flutter,
                     'freq_flutter': freq_flutter
                 }
-                print(f"Flutter detected for {mode_key}:")
+                print_red(f"Flutter detected for {mode_key}:")
                 print(f"  Flutter Velocity (V_flutter): {V_flutter}")
                 print(f"  Flutter Frequency (freq_flutter): {freq_flutter}")
         else:
@@ -178,27 +179,27 @@ def kMethodLogic():
 
 def plotDimensionlessFrequency(V_vec, r1, r2, r3, r4, case):
     plt.figure()
-    plt.plot(V_vec, V_vec * np.imag(r1), 'ro', markersize=5, label='Root 1')
-    plt.plot(V_vec, V_vec * np.imag(r2), 'bd', markersize=5, label='Root 2')
-    plt.plot(V_vec, V_vec * np.imag(r3), 'k*', markersize=5, label='Root 3')
-    plt.plot(V_vec, V_vec * np.imag(r4), 'gs', markersize=5, label='Root 4')
+    plt.plot(V_vec, V_vec * np.imag(r1), 'r-', markersize=2, label='Root 1')
+    plt.plot(V_vec, V_vec * np.imag(r2), 'b-', markersize=2, label='Root 2')
+    plt.plot(V_vec, V_vec * np.imag(r3), 'k-', markersize=2, label='Root 3')
+    plt.plot(V_vec, V_vec * np.imag(r4), 'g-', markersize=2, label='Root 4')
     plt.xlabel('V', fontsize=12)
     plt.ylabel(r'$\Omega/\omega_\theta$', fontsize=12)
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    #plt.savefig(f"figs/{case}_Frequency.eps", format="eps")
+    plt.savefig(f"figs/{case}_Frequency.eps", format="eps")
 
 def plotDimensionlessDamping(V_vec, r1, r2, r3, r4, case):
     plt.figure()
-    plt.plot(V_vec, V_vec * np.real(r1), 'ro', markersize=5, label='Root 1')
-    plt.plot(V_vec, V_vec * np.real(r2), 'bd', markersize=5, label='Root 2')
-    plt.plot(V_vec, V_vec * np.real(r3), 'k*', markersize=5, label='Root 3')
-    plt.plot(V_vec, V_vec * np.real(r4), 'gs', markersize=5, label='Root 4')
+    plt.plot(V_vec, V_vec * np.real(r1), 'r-', markersize=2, label='Root 1')
+    plt.plot(V_vec, V_vec * np.real(r2), 'b-', markersize=2, label='Root 2')
+    plt.plot(V_vec, V_vec * np.real(r3), 'k-', markersize=2, label='Root 3')
+    plt.plot(V_vec, V_vec * np.real(r4), 'g-', markersize=2, label='Root 4')
     plt.xlabel('V', fontsize=12)
     plt.ylabel(r'$\Gamma/\omega_\theta$', fontsize=12)
     plt.grid(True)
     plt.legend()
     plt.tight_layout()
-    #plt.savefig(f"figs/{case}_Damping.eps", format="eps")
+    plt.savefig(f"figs/{case}_Damping.eps", format="eps")
     plt.show()

@@ -47,7 +47,6 @@ TODO:
     -- For example, at lets say, h=1000m, we have the same ambient conditions, so we can check for a single velocity vector.
 """
 
-
 def part1(dv:float=0.05, dt:int = 100, velocityRange:str='FlightEnvelope',case:str='part1Flutter',
           showPlots:bool=False):
 
@@ -61,10 +60,12 @@ def part1(dv:float=0.05, dt:int = 100, velocityRange:str='FlightEnvelope',case:s
     arrALT =  np.unique(conditions[:,1])
 
     # Return flight conditions for the aircraft mission.
-    IP_sweep = np.linspace(MMIE, MMIF, dt)
-    chordCoeffCOM_sweep = np.linspace(CME, CMF, dt)
-    mass_sweep = np.linspace(MWINGE, MWINGF, dt)
+    IP_sweep = np.linspace(MMIF, MMIE, dt)
+    chordCoeffCOM_sweep = np.linspace(CMF, CME, dt)
+    mass_sweep = np.linspace(MWINGF, MWINGE, dt)
     time_sweep = np.linspace(0, ENDR, dt)
+
+    print(chordCoeffCOM_sweep)
     
     current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
     outfilename = f"results/{case}_{current_time}.csv"
@@ -109,12 +110,12 @@ def part1(dv:float=0.05, dt:int = 100, velocityRange:str='FlightEnvelope',case:s
 
             input_vars_flutter = {
                 'time[s]': time,
-                'a': parameters[0],
-                'e': 0.45,
+                'a': sectionModel[0],
+                'e': sectionModel[1] + sectionModel[0],
                 'mu': parameters[2],
                 'rs': parameters[0],
                 'sigma': parameters[1],
-                'xTheta': parameters[1],
+                'xTheta': sectionModel[1],
                 'MMI': MMI,
                 'MWING': MWING,
                 'chordCoeffCOM': chordCoeffCOM,
