@@ -17,7 +17,7 @@ The ```case.py``` file contains the cases that a user can define and run to solv
 The program can be run directy using the main file. User can either run a single case using the predefind commands, or run mutiple cases by adding cases in the ```main()``` function. The following arguments can be passed for the predefined cases.
 
 1. Running the validation case: \
-The validation case is define to validate the PK method from the refernce it has been adopted from (Hodges and Pierce, 2011). The command below will run only the validation case. It can be run as follows:
+The validation case is defined to validate the PK method from the reference it has been adopted from (Hodges and Pierce, 2011). The command below will run only the validation case. It can be run as follows:
 ```bash
 python3 main.py -z
 ```
