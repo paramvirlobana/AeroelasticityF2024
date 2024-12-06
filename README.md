@@ -6,7 +6,7 @@ Program written for the course: ```Aeroelasticity``` ```Fall 2024``` ```Concordi
 This program uses PK method to evaluate the flutter condition in a given flight envelope. 
 
 ## Usage
-The main entry point of the program is the ```main.py``` file. This file contains the arguments to run different cases within the program. This files does not contain any logical part and all the computations are carried out within the methods present in the ```modules``` directory. See **Directory Structure** sectoin for more information. 
+The main entry point of the program is the ```main.py``` file. This file contains the arguments to run different cases within the program. This files does not contain any logical part and all the computations are carried out within the methods present in the ```modules``` directory. See **Directory Structure** section for more information. 
 
 The ```case.py``` file contains the cases that a user can define and run to solve for a given flutter problem. The cases are defined within functions and then invoked from the ```main.py``` file. In the program, there are 3 predefined cases:
 1. Validation case
