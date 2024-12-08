@@ -58,10 +58,11 @@ def computeSectionModel(chordCoeffCOM, chordCoeffEA) -> tuple:
     e = 2 * chordCoeffCOM - 1
     a = 2 * chordCoeffEA - 1
     xTheta = e - a
+
     return a, xTheta
 
 def computeDimensionlessParameters(U_vec, m, altitude, EI, GJ, I_P, b, l, dv, velocityRange:str) -> tuple:
-    #m = m/9.81
+    m = m/9.81
     
     # -------- SIGMA -------- #
     omega_h     = (1.8751**2) * np.sqrt(EI / (m * l**3))
@@ -78,18 +79,20 @@ def computeDimensionlessParameters(U_vec, m, altitude, EI, GJ, I_P, b, l, dv, ve
 
     # -------- V -------- #
     if velocityRange == "Default":
-        V_vec = np.arange(0, 5 + dv, dv)
+        V_vec = np.arange(0, 3 + dv, dv)
         V_vec = V_vec[1:]
     elif velocityRange == "FlightEnvelope":
         U_max = np.max(U_vec)
         U_min = np.min(U_vec)
         V_max = U_max / (b * omega_theta)
-        V_vec = np.arange(0, V_max*1.20 + dv, dv)
+        V_vec = np.arange(0, V_max + dv, dv)
         V_vec = V_vec[1:]
     else:
         raise ValueError("Invalid option for velocity range. Please choose from Default or FlightEnvelope.")
 
     #print(f"ALTITUDE: {altitude}, RS: {rs}, SIGMA: {sigma}, MU: {mu}, rho_inf:{rho_inf}, V: {np.max(V_vec)}")
+
+    print(omega_theta, b)
     return rs, sigma, mu, V_vec
 
 

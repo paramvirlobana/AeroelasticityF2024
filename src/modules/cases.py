@@ -1,4 +1,5 @@
 import os
+import pandas as pd
 import numpy as np
 from datetime import datetime
 from modules.methods import *
@@ -23,15 +24,15 @@ S       =     15.0              #   [m^2]   Wing Area
 WFUEL   =     80                #   [kg]    Weight of Fuel in Each Wing
 MMIF    =     7                 #   [kg.m^2]Mass Moment of Inertia (MMI) at MTOW
 MMIE    =     4                 #   [kg.m^2]Mass Moment of Inertia (MMI) No Fuel
-EI      =     2e5               #   [N.m^2] Bending Rigidity
-GJ      =     1e5               #   [N.m^2] Torsional Rigidity
+EI      =     2*1e5             #   [N.m^2] Bending Rigidity
+GJ      =     1*1e5          #   [N.m^2] Torsional Rigidity
 
 # CALCULATED VALUES
 MWINGE  =     (26.91*S)/2       #   [kg]    Wing Mass
 MWINGF  =     MWINGE + 80       #   [kg]    Wing Mass
 B       =     np.sqrt(S*AR)     #   [ m]    Wing span total length
 C       =     S / B             #   [ m]    Wing chord
-CMF     =     0.35
+CMF     =     0.35              
 CME     =     0.45
 
 
@@ -47,7 +48,7 @@ TODO:
     -- For example, at lets say, h=1000m, we have the same ambient conditions, so we can check for a single velocity vector.
 """
 
-def part1(dv:float=0.05, dt:int = 100, velocityRange:str='FlightEnvelope',case:str='part1Flutter',
+def part1(dv:float=0.5, dt:int = 2, velocityRange:str='FlightEnvelope',case:str='part1Flutter',
           showPlots:bool=False):
 
     # Step 1: get velocity and altitude conditions:
@@ -123,9 +124,37 @@ def part1(dv:float=0.05, dt:int = 100, velocityRange:str='FlightEnvelope',case:s
             }
             
             writeResults(input_vars_flutter, flutter_points, filename=outfilename)
+
+    columns_to_check = ['R1_V_flutter', 'R2_V_flutter', 'R3_V_flutter', 'R4_V_flutter']
+    df = pd.read_csv(outfilename)
+    
+    if (df[columns_to_check] == 99999).all().all():
+        print("")
+        print_green("The design is flutter free for the current mission.")
+    else:
+        print("")
+        print_red("The design has a flutter condition for this configuration")
+        df_temp = pd.read_csv(outfilename)
+
+        # Drop rows where all columns in columns_to_check have the value 99999
+        df_temp = df_temp[~(df_temp[columns_to_check] == 99999).all(axis=1).to_numpy()]
+        
+        min_time = df_temp['time[s]'].min()
+        max_time = df_temp['time[s]'].max()
+
+        df_min_time = df_temp[df_temp['time[s]'] == min_time]
+        df_max_time = df_temp[df_temp['time[s]'] == max_time]
+
+        print(f"Data for the smallest unique value of time[s] ({min_time}):")
+        print(df_min_time)
+
+        print(f"Data for the largest unique value of time[s] ({max_time}):")
+        print(df_max_time)
+
     print("")
     print_green(f"Results written to {outfilename}")
     print("")
+
 
 def validation(showPlot:bool):
     """
@@ -143,6 +172,7 @@ def validation(showPlot:bool):
     initK:  float   =   1.0
     case:   str     =   'validation'
 
+    mu = np.linspace()
     input_vars = {
         'a': a,
         'e': e,
@@ -180,4 +210,3 @@ def validation(showPlot:bool):
     if showPlot:
         plotDimensionlessFrequency(V_vec, roots["R1"], roots["R2"], roots["R3"], roots["R4"], case)
         plotDimensionlessDamping(V_vec, roots["R1"], roots["R2"], roots["R3"], roots["R4"], case)
-
