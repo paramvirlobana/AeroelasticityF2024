@@ -6,7 +6,7 @@ Program written for the course: ```Aeroelasticity``` ```Fall 2024``` ```Concordi
 This program uses PK method to evaluate the flutter condition in a given flight envelope. 
 
 ## Usage
-The main entry point of the program is the ```main.py``` file. This file contains the arguments to run different cases within the program. This files does not contain any logical part and all the computations are carried out within the methods present in the ```modules``` directory. See **Directory Structure** sectoin for more information. 
+The main entry point of the program is the ```main.py``` file. This file contains the arguments to run different cases within the program. This files does not contain any logical part and all the computations are carried out within the methods present in the ```modules``` directory. See **Directory Structure** section for more information. 
 
 The ```case.py``` file contains the cases that a user can define and run to solve for a given flutter problem. The cases are defined within functions and then invoked from the ```main.py``` file. In the program, there are 3 predefined cases:
 1. Validation case
@@ -17,7 +17,7 @@ The ```case.py``` file contains the cases that a user can define and run to solv
 The program can be run directy using the main file. User can either run a single case using the predefind commands, or run mutiple cases by adding cases in the ```main()``` function. The following arguments can be passed for the predefined cases.
 
 1. Running the validation case: \
-The validation case is define to validate the PK method from the refernce it has been adopted from (Hodges and Pierce, 2011). The command below will run only the validation case. It can be run as follows:
+The validation case is defined to validate the PK method from the reference it has been adopted from (Hodges and Pierce, 2011). The command below will run only the validation case. It can be run as follows:
 ```bash
 python3 main.py -z
 ```
