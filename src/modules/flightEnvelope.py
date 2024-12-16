@@ -21,7 +21,7 @@ def conditions(showPlot:bool=False, saveResults:bool=False, showConditions:bool=
 
     return points
 
-def flightEnvelopePoints(x_points, y_points, v_resolution=0.05, h_resolution=10):
+def flightEnvelopePoints(x_points, y_points, v_resolution=0.05, h_resolution=800):
     """
     Generate points within the flight envelope with exact boundary points.
     
@@ -32,7 +32,7 @@ def flightEnvelopePoints(x_points, y_points, v_resolution=0.05, h_resolution=10)
     Returns:
     tuple: (valid_points, mask)
         - valid_points: List of [velocity, altitude] points within the envelope
-        - mask: 2D boolean array indicating valid points
+        - mask: 2D 
     """
     
     bottom_interp = interp1d([0, 252/3.6], [0, 0])
@@ -68,7 +68,7 @@ def flightEnvelopePoints(x_points, y_points, v_resolution=0.05, h_resolution=10)
 
 
 def plotEnvelope(points, x_points, y_points, EAS, EAS15, showConditions:bool=False):
-    fig, ax = plt.subplots(figsize=(10, 5))
+    fig, ax = plt.subplots(figsize=(12, 5))
 
     df_full = pd.read_csv("modules/full.csv")
     df_empty = pd.read_csv("modules/empty.csv")
@@ -80,7 +80,7 @@ def plotEnvelope(points, x_points, y_points, EAS, EAS15, showConditions:bool=Fal
     V_results_empty = df_empty['VV']
     
     # Plot the boundary lines first
-    ax.plot(x_points, y_points, color='black', linewidth=2, alpha=0.7)
+    ax.plot(x_points, y_points, color='black', linewidth=2, alpha=0.9, label='Proposed Flight Envelope')
 
 
     # EAS AND EAS*1.15 plotting
@@ -94,13 +94,14 @@ def plotEnvelope(points, x_points, y_points, EAS, EAS15, showConditions:bool=Fal
     if showConditions:  
         ax.scatter(points[:,0], points[:,1], s=2, alpha=0.5, label='Analysis Conditions')
 
-    ax.plot(V_results_full, h_results_full, color='black', label=r'$U_F$ with Max Fuel')
-    ax.plot(V_results_empty, h_results_empty, color='red', linestyle='--', label=r'$U_F$ with Min Fuel')
+    # ax.plot(V_results_full, h_results_full, color='black', linestyle='--', label=r'$U_F$ with Max Fuel')
+    ax.plot(V_results_empty, h_results_empty, color='red', linestyle='--', label=r'$U_F$ with Electric Variant')
+    #ax.plot(V2_results_empty, h_results_empty, color='green', linestyle='--', label=r'$U_F$ with Min Fuel Team 5')
     
     ax.set_xlabel('True speed (m/s)')
     ax.set_ylabel('Altitude (m)')
     # ax.set_title('Flight ')
-    ax.fill(x_points, y_points, color='white', alpha=0.5, label='Proposed Flight Envelope')
+    ax.fill(x_points, y_points, color='white', alpha=0.5)
     #ax.fill(x_pts, y_pts, color='green', alpha=0.5, label='EAS')
     ax.fill(x_pts15, y_pts, color='lightgray', alpha=0.5, label='EAS with Safety Margin')
 
@@ -111,15 +112,15 @@ def plotEnvelope(points, x_points, y_points, EAS, EAS15, showConditions:bool=Fal
     ax.spines['right'].set_visible(False)
 
     ax.legend(loc='upper left', bbox_to_anchor=(0, 1), ncol=1)
-
+    ax.legend(bbox_to_anchor=(0.925, 0.001), loc='lower left')
     # ax.text(87, 30, "252 km/h", ha='right')
     # ax.text(85, 800, "302 km/h", ha='left')
     # ax.text(82, 800, "800 m", ha='right')
     # ax.text(14, 1200, "1200 m", ha='right')
     # ax.text(85, 3000, "3000 m", ha='left')
     #
-
-    plt.savefig("figs/FlightEnvelopeDetailed.eps", format="eps")
+    plt.tight_layout()
+    plt.savefig("figs/FlightEnvelopeDetailedElectric.eps", format="eps")
     plt.show()
 
 def plotSettings():
@@ -129,7 +130,7 @@ def plotSettings():
     'font.size':       16,  
     'axes.titlesize':  16,  
     'axes.labelsize':  16,  
-    'legend.fontsize': 16, 
+    'legend.fontsize': 12, 
     'xtick.labelsize': 16, 
     'ytick.labelsize': 16  
     })

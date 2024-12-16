@@ -31,7 +31,7 @@ def main():
     -- PK method is ALWAYS called since it is quite reliable.
     """
     if z == False:
-        case.part1(velocityRange='Default', showPlots=p)
+        case.part1MDOF(velocityRange='Default', showPlots=p)
 
     if v == True:
         case.validation(p)

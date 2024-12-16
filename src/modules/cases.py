@@ -25,7 +25,7 @@ WFUEL   =     80                #   [kg]    Weight of Fuel in Each Wing
 MMIF    =     7                 #   [kg.m^2]Mass Moment of Inertia (MMI) at MTOW
 MMIE    =     4                 #   [kg.m^2]Mass Moment of Inertia (MMI) No Fuel
 EI      =     2*1e5             #   [N.m^2] Bending Rigidity
-GJ      =     1*1e5          #   [N.m^2] Torsional Rigidity
+GJ      =     1*1e5             #   [N.m^2] Torsional Rigiditycasescases
 
 # CALCULATED VALUES
 MWINGE  =     (26.91*S)/2       #   [kg]    Wing Mass
@@ -48,7 +48,7 @@ TODO:
     -- For example, at lets say, h=1000m, we have the same ambient conditions, so we can check for a single velocity vector.
 """
 
-def part1(dv:float=0.5, dt:int = 2, velocityRange:str='FlightEnvelope',case:str='part1Flutter',
+def part1(dv:float=0.005, dt:int = 2, velocityRange:str='FlightEnvelope',case:str='part1Flutter',
           showPlots:bool=False):
 
     # Step 1: get velocity and altitude conditions:
@@ -99,9 +99,9 @@ def part1(dv:float=0.5, dt:int = 2, velocityRange:str='FlightEnvelope',case:str=
                 if flutter_info is not None:
                     V_flutter = flutter_info['V_flutter']
                     freq_flutter = flutter_info['freq_flutter']
-                    print(f"\nMode {mode_key}:")
-                    print(f"  Flutter Velocity (V_flutter): {V_flutter}")
-                    print(f"  Flutter Frequency (freq_flutter): {freq_flutter}")
+                    #print(f"\nMode {mode_key}:")
+                    #print(f"  Flutter Velocity (V_flutter): {V_flutter}")
+                    #print(f"  Flutter Frequency (freq_flutter): {freq_flutter}")
                     if showPlots:
                         plotDimensionlessFrequency(parameters[3], roots["R1"], roots["R2"], roots["R3"], roots["R4"], case)
                         plotDimensionlessDamping(parameters[3], roots["R1"], roots["R2"], roots["R3"], roots["R4"], case)
@@ -155,6 +155,196 @@ def part1(dv:float=0.5, dt:int = 2, velocityRange:str='FlightEnvelope',case:str=
     print_green(f"Results written to {outfilename}")
     print("")
 
+def part1MDOF(dv:float=0.005, dt:int = 2, velocityRange:str='FlightEnvelope',case:str='part1Flutter',
+          showPlots:bool=False):
+
+    conditions = flEnv.conditions()
+    arrALT =  np.unique(conditions[:,1])
+
+    IP_sweep = np.linspace(MMIF, MMIE, dt)
+    chordCoeffCOM_sweep = np.linspace(CMF, CME, dt)
+    mass_sweep = np.linspace(MWINGF, MWINGE, dt)
+    time_sweep = np.linspace(0, ENDR, dt)
+
+    current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+    outfilename = f"results/{case}_{current_time}.csv"
+    velocity_dict = {}
+
+    for i in range(dt):
+        MMI = IP_sweep[i]
+        MWING = mass_sweep[i]
+        chordCoeffCOM = chordCoeffCOM_sweep[i]
+        time = time_sweep[i]
+
+        for h in arrALT:
+            U_vec = conditions[conditions[:,1] == h][:,0]
+            velocity_dict[h] = U_vec
+
+            # Compute dimensionless parameters
+            parameters = computeDimensionlessParameters(U_vec, MWING, h, EI, GJ, MMI, C/2, B/2, dv=dv, velocityRange=velocityRange)
+            sectionModel = computeSectionModel(chordCoeffCOM, 0.4)
+
+            # Now run the 2DOF method:
+            # twoDOFMethod returns results, roots similar to pkmethod but with only R1 and R2.
+            flutter_results, roots = multiDOFMethod(*parameters, *sectionModel, initK=1.0, printAlt=h)
+
+            # Since we only have R1 and R2:
+            flutter_points = findFlutter(parameters[3], roots) 
+            # NOTE: Ensure findFlutter can handle modes=["R1","R2"] only.
+            # If not, adapt it: for each mode in that list, check flutter.
+
+            print("-"*65)
+            for mode_key, flutter_info in flutter_points.items():
+                if flutter_info is not None:
+                    V_flutter = flutter_info['V_flutter']
+                    freq_flutter = flutter_info['freq_flutter']
+                    if showPlots:
+                        plotDimensionlessFrequency(parameters[3], roots["R1"], roots["R2"], None, None, case) 
+                        plotDimensionlessDamping(parameters[3], roots["R1"], roots["R2"], None, None, case)
+                else:
+                    print(f"\nMode {mode_key}: No flutter detected in the given velocity range.")
+            print("-"*65)
+
+            input_vars_flutter = {
+                'time[s]': time,
+                'a': sectionModel[0],
+                'e': sectionModel[1] + sectionModel[0],
+                'mu': parameters[2],
+                'rs': parameters[0],
+                'sigma': parameters[1],
+                'xTheta': sectionModel[1],
+                'MMI': MMI,
+                'MWING': MWING,
+                'chordCoeffCOM': chordCoeffCOM,
+                'h': h
+            }
+
+            writeResults(input_vars_flutter, flutter_points, filename=outfilename)
+
+    columns_to_check = ['R1_V_flutter', 'R2_V_flutter']
+    df = pd.read_csv(outfilename)
+    
+    if (df[columns_to_check] == 99999).all().all():
+        print("")
+        print_green("The design is flutter free for the current mission.")
+    else:
+        print("")
+        print_red("The design has a flutter condition for this configuration")
+        df_temp = pd.read_csv(outfilename)
+
+        # Filter out rows where all flutter velocities are 99999
+        df_temp = df_temp[~(df_temp[columns_to_check] == 99999).all(axis=1).to_numpy()]
+        
+        min_time = df_temp['time[s]'].min()
+        max_time = df_temp['time[s]'].max()
+
+        df_min_time = df_temp[df_temp['time[s]'] == min_time]
+        df_max_time = df_temp[df_temp['time[s]'] == max_time]
+
+        print(f"Data for the smallest unique value of time[s] ({min_time}):")
+        print(df_min_time)
+        print(f"Data for the largest unique value of time[s] ({max_time}):")
+        print(df_max_time)
+
+    print("")
+    print_green(f"Results written to {outfilename}")
+    print("")
+
+
+def part2(dv:float=0.005, dt:int = 1, velocityRange:str='FlightEnvelope',case:str='part1Flutter',
+          showPlots:bool=False):
+
+
+    # This part of the program is to perfrm flutter analysis on the all electric variant of the aircraft.
+    # Conditions returned from the flight envelope for altitude and velocity.
+    
+    MWING = MWINGF
+    MMI = 5.2
+    chordCoeffCOM = 0.41
+
+    conditions = flEnv.conditions()
+    arrALT =  np.unique(conditions[:,1])
+
+    
+    current_time = datetime.now().strftime("%Y%m%d_%H%M%S")
+    outfilename = f"results/{case}_{current_time}.csv"
+    velocity_dict = {}
+
+    for h in arrALT:
+        U_vec = conditions[conditions[:,1] == h][:,0]
+        velocity_dict[h] = U_vec
+
+        # Create tuples for the aircraft parameters
+        amb         = (U_vec, MWING, h)
+        structural  = (EI, GJ, MMI)
+        geometric   = (C/2, B/2)
+
+        parameters = computeDimensionlessParameters(*amb, *structural, *geometric, dv=dv, velocityRange=velocityRange)
+        sectionModel = computeSectionModel(chordCoeffCOM, 0.4)
+
+        flutter_results, roots = pkmethod(*parameters, *sectionModel, initK=1.0, printAlt=h)
+        flutter_points = findFlutter(parameters[3], roots)
+
+        # Print flutter results
+        print("-"*65)
+        for mode_key, flutter_info in flutter_points.items():
+            if flutter_info is not None:
+                V_flutter = flutter_info['V_flutter']
+                freq_flutter = flutter_info['freq_flutter']
+                #print(f"\nMode {mode_key}:")
+                #print(f"  Flutter Velocity (V_flutter): {V_flutter}")
+                #print(f"  Flutter Frequency (freq_flutter): {freq_flutter}")
+                if showPlots:
+                    plotDimensionlessFrequency(parameters[3], roots["R1"], roots["R2"], roots["R3"], roots["R4"], case)
+                    plotDimensionlessDamping(parameters[3], roots["R1"], roots["R2"], roots["R3"], roots["R4"], case)
+            else:
+                print(f"\nMode {mode_key}: No flutter detected in the given velocity range.")
+        print("-"*65)
+
+        input_vars_flutter = {
+            'a': sectionModel[0],
+            'e': sectionModel[1] + sectionModel[0],
+            'mu': parameters[2],
+            'rs': parameters[0],
+            'sigma': parameters[1],
+            'xTheta': sectionModel[1],
+            'MMI': MMI,
+            'MWING': MWING,
+            'chordCoeffCOM': chordCoeffCOM,
+            'h': h
+        }
+        
+        writeResults(input_vars_flutter, flutter_points, filename=outfilename)
+
+    columns_to_check = ['R1_V_flutter', 'R2_V_flutter', 'R3_V_flutter', 'R4_V_flutter']
+    df = pd.read_csv(outfilename)
+    
+    if (df[columns_to_check] == 99999).all().all():
+        print("")
+        print_green("The design is flutter free for the current mission.")
+    else:
+        print("")
+        print_red("The design has a flutter condition for this configuration")
+        df_temp = pd.read_csv(outfilename)
+
+        # Drop rows where all columns in columns_to_check have the value 99999
+        df_temp = df_temp[~(df_temp[columns_to_check] == 99999).all(axis=1).to_numpy()]
+        
+        min_time = df_temp['time[s]'].min()
+        max_time = df_temp['time[s]'].max()
+
+        df_min_time = df_temp[df_temp['time[s]'] == min_time]
+        df_max_time = df_temp[df_temp['time[s]'] == max_time]
+
+        print(f"Data for the smallest unique value of time[s] ({min_time}):")
+        print(df_min_time)
+
+        print(f"Data for the largest unique value of time[s] ({max_time}):")
+        print(df_max_time)
+
+    print("")
+    print_green(f"Results written to {outfilename}")
+    print("")
 
 def validation(showPlot:bool):
     """
@@ -172,7 +362,6 @@ def validation(showPlot:bool):
     initK:  float   =   1.0
     case:   str     =   'validation'
 
-    mu = np.linspace()
     input_vars = {
         'a': a,
         'e': e,
@@ -188,7 +377,7 @@ def validation(showPlot:bool):
     # PRINT INITIALIZATION STATEMENT
     print("[INFO]   Validation subroutine has been called.")
     parameters = (rs, sigma, mu, V_vec)
-    flutter_results, roots = pkmethod(*parameters, a, xTheta, initK, printAlt=0.0)
+    flutter_results, roots = multiDOFMethod(*parameters, a, xTheta, initK, printAlt=0.0)
 
     flutter_points = findFlutter(V_vec, roots)
 

@@ -11,7 +11,9 @@ The main entry point of the program is the ```main.py``` file. This file contain
 The ```case.py``` file contains the cases that a user can define and run to solve for a given flutter problem. The cases are defined within functions and then invoked from the ```main.py``` file. In the program, there are 3 predefined cases:
 1. Validation case
 2. Part 1 - Generic Aircraft
-3. Part 2 - All Electric Aircraft - TO BE COMPLETED
+3. Part 2 - All Electric Aircraft
+
+The above there cases are currently defined in the ```cases.py``` file.
 
 ### Example Usage
 The program can be run directy using the main file. User can either run a single case using the predefind commands, or run mutiple cases by adding cases in the ```main()``` function. The following arguments can be passed for the predefined cases.

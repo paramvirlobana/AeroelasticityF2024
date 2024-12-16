@@ -7,7 +7,21 @@ def pkmethod(rs:float,          sigma:float,    mu:float,   V_vec:float,
              a:float,           xTheta:float,   initK:float,       
              printAlt,          tol:float=0.001):
     """
-     This function holds the main logic for the pk method.   
+    This function holds the main logic for the pk method.   
+
+    Parameters:
+    -----------
+        -- rs, sigma, mu    :Dimensionless parameters as derived from the problem setup.
+        -- V_vec            :Array of dimensionless velocities V = U/(b*omega_theta).
+        -- a                :Nondimensional elastic axis offset.
+        -- xTheta           :Nondimensional offset between the elastic axis and mass axis.
+        -- initK            :Initial guess for reduced frequency k.
+        -- tol              :Tolerance for the iterative pk-solution.
+
+    Returns:
+    --------
+        -- results  : eigenvaluesList is the set of complex eigenvalues at each velocity.
+        -- roots    : Store eigenvalues by mode for post-processing.
     """
     print("STARTING PK METHOD")
     print(f"Conditions\t Altitude: {printAlt:.1f},\trs: {rs:.4f},\tsigma: {sigma:.4f},\tmu: {mu:.4f}")
@@ -54,15 +68,8 @@ def pkmethod(rs:float,          sigma:float,    mu:float,   V_vec:float,
     return results, roots
 
 
-def computeSectionModel(chordCoeffCOM, chordCoeffEA) -> tuple:
-    e = 2 * chordCoeffCOM - 1
-    a = 2 * chordCoeffEA - 1
-    xTheta = e - a
-
-    return a, xTheta
-
 def computeDimensionlessParameters(U_vec, m, altitude, EI, GJ, I_P, b, l, dv, velocityRange:str) -> tuple:
-    m = m/9.81
+    #m = m/9.81
     
     # -------- SIGMA -------- #
     omega_h     = (1.8751**2) * np.sqrt(EI / (m * l**3))
@@ -79,7 +86,7 @@ def computeDimensionlessParameters(U_vec, m, altitude, EI, GJ, I_P, b, l, dv, ve
 
     # -------- V -------- #
     if velocityRange == "Default":
-        V_vec = np.arange(0, 3 + dv, dv)
+        V_vec = np.arange(0, 2.5 + dv, dv)
         V_vec = V_vec[1:]
     elif velocityRange == "FlightEnvelope":
         U_max = np.max(U_vec)
@@ -90,7 +97,7 @@ def computeDimensionlessParameters(U_vec, m, altitude, EI, GJ, I_P, b, l, dv, ve
     else:
         raise ValueError("Invalid option for velocity range. Please choose from Default or FlightEnvelope.")
 
-    #print(f"ALTITUDE: {altitude}, RS: {rs}, SIGMA: {sigma}, MU: {mu}, rho_inf:{rho_inf}, V: {np.max(V_vec)}")
+    print(f"ALTITUDE: {altitude}, RS: {rs}, SIGMA: {sigma}, MU: {mu}, rho_inf:{rho_inf}, V: {np.max(V_vec)}")
 
     print(omega_theta, b)
     return rs, sigma, mu, V_vec
@@ -104,6 +111,7 @@ def TheodorsenFunction(k:float):
     ck = numerator / denominator
 
     return ck
+
 
 def pkMethodLogic(sigma:float,   V:float,    mu:float,
                  k:float,       a:float,    xTheta:float,
